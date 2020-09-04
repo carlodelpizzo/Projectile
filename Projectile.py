@@ -120,7 +120,7 @@ class Ball:
 def dis_dot_path(path, dot_color, radius):
     for i in range(len(path)):
         if i % 2 != 0:
-            pygame.draw.circle(screen, dot_color, (int(path[i][0]), int(path[i][1])), int(radius / 3))
+            pygame.draw.circle(screen, dot_color, (int(path[i][0]), int(path[i][1])), radius)
 
 
 def dis_line_path(path, line_color):
@@ -145,7 +145,7 @@ def murder_balls(kill_mode):
             if balls[i].x > screen_width + balls[i].radius + 1:
                 pop_list.append(i)
         for i in range(len(pop_list)):
-            if pop_list[i] <= len(balls):
+            if pop_list[i] <= len(balls) - 1:
                 balls.pop(pop_list[i])
     else:
         for dead_ball in balls:
@@ -326,7 +326,7 @@ while running:
         if trace_type == 1:
             dis_line_path(ball.path, ball.color)
         elif trace_type == 2:
-            dis_dot_path(ball.path, ball.color, ball.radius)
+            dis_dot_path(ball.path, ball.color, 2)
     murder_balls(True)
 
     clock.tick(frame_rate)
