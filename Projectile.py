@@ -3,10 +3,16 @@ from pygame.locals import *
 from math import *
 import random
 
+
+def truncate(number, digits):
+    stepper = 10.0 * digits
+    return trunc(stepper * number) / stepper
+
+
 pygame.init()
 # Initialize screen
 screen_width = 700
-screen_height = 700
+screen_height = 500
 screen = pygame.display.set_mode((screen_width, screen_height))
 # Title
 pygame.display.set_caption("Projectile")
@@ -41,9 +47,9 @@ class Launcher:
 
     def launch_ball(self):
         balls.append(Ball())
-        x_pwr = int(cos(radians(self.angle)) * (self.power / 2))
-        y_pwr = int(sin(radians(self.angle)) * (self.power / 2))
-        balls[len(balls) - 1].dir = (x_pwr, y_pwr)
+        x_comp = self.power * cos(radians(self.angle))
+        y_comp = - self.power * sin(radians(self.angle))
+        balls[len(balls) - 1].dir = (x_comp, y_comp)
 
 
 class Ball:
@@ -59,37 +65,28 @@ class Ball:
         self.apex = screen_height
 
     def draw(self):
-        pygame.draw.circle(screen, fg_color, (self.x, self.y), self.radius)
+        pygame.draw.circle(screen, fg_color, (int(self.x), int(self.y)), self.radius)
 
     def move(self):
-        self.path.append((self.x, self.y))
-        if self.y <= screen_height:
+        self.path.append((int(self.x), int(self.y)))
+        if self.y + self.dir[1] + self.g <= screen_height - self.radius:
             self.x += self.dir[0]
-            self.y -= self.dir[1] - int(self.g)
+            self.y += self.dir[1] + self.g
             self.g += g_constant
         else:
             self.bounce()
-        if self.y < self.apex:
-            self.apex = self.y
+        if int(self.y) < self.apex:
+            self.apex = int(self.y)
 
     def bounce(self):
-        self.dir = (self.dir[0], - self.dir[1])
+        self.dir = (self.dir[0] * 0.98, - self.dir[1] * 0.98)
         self.g = 0
-        self.y = screen_height
+        self.y = screen_height - self.radius
 
     def display_pos(self):
-        pos = "(" + str(self.x) + ", " + str(screen_height - self.y) + ")"
+        pos = "(" + str(int(self.x)) + ", " + str(screen_height - int(self.y)) + ")"
         display_pos = stat_font.render(pos, True, white)
-        screen.blit(display_pos, (self.x + self.radius, self.y - (self.radius * 2)))
-
-    def trace_dot(self):
-        for i in range(len(self.path)):
-            pygame.draw.circle(screen, self.color, (self.path[i][0], self.path[i][1]), int(self.radius / 3))
-
-    def trace_line(self):
-        for i in range(len(self.path) - 1):
-            pygame.draw.line(screen, self.color, (self.path[i][0], self.path[i][1]),
-                             (self.path[i + 1][0], self.path[i + 1][1]), 1)
+        screen.blit(display_pos, (int(self.x) + self.radius, int(self.y) - (self.radius * 2)))
 
     def display_apex(self):
         for i in range(len(self.path)):
@@ -97,7 +94,20 @@ class Ball:
                 apex_str = "(" + str(self.path[i][0]) + ", " + str(screen_height - self.path[i][1]) + ")"
                 dis_apex = stat_font.render(apex_str, True, white)
                 screen.blit(dis_apex, (self.path[i][0] + self.radius, self.path[i][1] - (self.radius * 2)))
+                pygame.draw.circle(screen, self.color, (self.path[i][0], self.path[i][1]), int(self.radius / 3))
                 break
+
+
+def dis_dot_path(path, dot_color, radius):
+    for i in range(len(path)):
+        if i % 2 != 0:
+            pygame.draw.circle(screen, dot_color, (path[i][0], path[i][1]), int(radius / 3))
+
+
+def dis_line_path(path, line_color):
+    for i in range(len(path) - 1):
+        pygame.draw.line(screen, line_color, (path[i][0], path[i][1]),
+                         (path[i + 1][0], path[i + 1][1]), 1)
 
 
 # Create grid of unit = 10 pixels
@@ -116,37 +126,62 @@ def murder_balls(kill_mode):
             if balls[i].x > screen_width + balls[i].radius + 1:
                 pop_list.append(i)
         for i in range(len(pop_list)):
-            balls.pop(pop_list[i])
+            if pop_list[i] <= len(balls):
+                balls.pop(pop_list[i])
     else:
-        for ball in balls:
-            if ball.x > screen_width + ball.radius + 1:
-                ball.dir = (0, 0)
+        for dead_ball in balls:
+            if dead_ball.x > screen_width + dead_ball.radius + 1:
+                dead_ball.dir = (0, 0)
 
 
 def display_info():
     stat_num = 0
     # Display number of balls
-    num_balls = str(len(balls))
-    dis_num_balls = font.render("Balls: " + num_balls, True, white)
-    screen.blit(dis_num_balls, (0, font_size * stat_num))
-    stat_num += 1
+    # num_balls = str(len(balls))
+    # dis_num_balls = font.render("Balls: " + num_balls, True, white)
+    # screen.blit(dis_num_balls, (0, font_size * stat_num))
+    # stat_num += 1
     # Display power
-    launch_power = str(player.power)
-    dis_launch_power = font.render("Power: " + launch_power, True, white)
+    dis_launch_power = font.render("Power: " + str(player.power), True, white)
     screen.blit(dis_launch_power, (0, font_size * stat_num))
     stat_num += 1
+    # Display player angle
+    dis_player_angle = font.render("Angle: " + str(player.angle), True, white)
+    screen.blit(dis_player_angle, (0, font_size * stat_num))
+    stat_num += 1
 
 
+# Update player angle and power based on mouse pos
+def mouse_click():
+    mouse_pos = pygame.mouse.get_pos()
+    mouse_distance = sqrt(
+        mouse_pos[0] * mouse_pos[0] + (screen_height - mouse_pos[1]) * (screen_height - mouse_pos[1]))
+    player.angle = truncate(degrees(acos(mouse_pos[0] / mouse_distance)), 1)
+    player.power = truncate(mouse_distance * 0.03, 1)
+
+
+def sim_path(x_pwr_sim, y_pwr_sim):
+    sim = Ball()
+    sim.dir = (x_pwr_sim, y_pwr_sim)
+    t = 0
+    while sim.x < screen_width and t < 10000:
+        sim.move()
+        t += 1
+    return sim.path
+
+
+# Game data
 player = Launcher()
 balls = []
-g_constant = 0.167
-
 clock = pygame.time.Clock()
 frame_rate = 60
-show_info = False
-trace = 0
+g_constant = 9.8 / frame_rate
+
+show_info = True
+trace_type = 0
 aim_down = False
 aim_up = False
+mouse_hold = False
 running = True
 pause = False
 while running:
@@ -202,10 +237,10 @@ while running:
             elif keys[K_s] and show_info:
                 show_info = False
             # Trace on/off
-            if keys[K_t] and (0 <= trace <= 1):
-                trace += 1
-            elif keys[K_t] and trace >= 2:
-                trace = 0
+            if keys[K_t] and (0 <= trace_type <= 1):
+                trace_type += 1
+            elif keys[K_t] and trace_type >= 2:
+                trace_type = 0
             # Kill ball
             if keys[K_k] and len(balls) != 0:
                 balls.pop(len(balls) - 1)
@@ -219,6 +254,13 @@ while running:
             if not keys[K_UP] and aim_up:
                 aim_up = False
 
+        # Mouse button events
+        if event.type == pygame.MOUSEBUTTONDOWN and not mouse_hold:
+            mouse_click()
+            mouse_hold = True
+        elif event.type == pygame.MOUSEBUTTONUP and mouse_hold:
+            mouse_hold = False
+
     # Show stats and info
     if show_info:
         display_info()
@@ -227,6 +269,11 @@ while running:
         player.angle += 0.5
     elif aim_down and player.angle > 0:
         player.angle -= 0.5
+    if mouse_hold:
+        mouse_click()
+        x_p = player.power * cos(radians(player.angle))
+        y_p = - player.power * sin(radians(player.angle))
+        dis_line_path(sim_path(x_p, y_p), fg_color)
     player.draw()
 
     # Ball updates
@@ -237,11 +284,11 @@ while running:
         if show_info:
             ball.display_pos()
             ball.display_apex()
-        if trace == 1:
-            ball.trace_line()
-        elif trace == 2:
-            ball.trace_dot()
-    murder_balls(False)
+        if trace_type == 1:
+            dis_line_path(ball.path, ball.color)
+        elif trace_type == 2:
+            dis_dot_path(ball.path, ball.color, ball.radius)
+    murder_balls(True)
 
     clock.tick(frame_rate)
     pygame.display.flip()
