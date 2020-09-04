@@ -34,20 +34,21 @@ class Launcher:
 
     def __init__(self):
         self.x = 0
-        self.y = 0
+        self.y = screen_height
         self.angle = 80.0
         self.power = 15.5
         self.length = 60
+        self.color = fg_color
 
     def draw(self):
         end_x = int(cos(radians(self.angle)) * self.length)
         end_y = screen_height - int(sin(radians(self.angle)) * self.length)
-        pygame.draw.line(screen, fg_color, (0, screen_height), (end_x, end_y), 3)
+        pygame.draw.line(screen, self.color, (self.x, self.y), (end_x, end_y), 3)
 
     def launch_ball(self):
-        balls.append(Ball())
         x_comp = self.power * cos(radians(self.angle))
         y_comp = - self.power * sin(radians(self.angle))
+        balls.append(Ball())
         balls[len(balls) - 1].dir = (x_comp, y_comp)
 
 
@@ -68,19 +69,24 @@ class Ball:
     def move(self):
         self.path.append((int(self.x), int(self.y)))
         # If within screen top/bottom on next move
-        if screen_height - self.radius + 1 >= self.y + self.dir[1] > 0 + self.radius - 1:
+        if screen_height > self.y + self.dir[1] > 0:
             self.x += self.dir[0]
-            self.dir = (self.dir[0], self.dir[1] + g_constant)
             self.y += self.dir[1]
+            self.dir = (self.dir[0], self.dir[1] + g_constant)
         else:
             self.bounce_y()
+        if bounce_x:
+            if screen_width < self.x + self.dir[0] or self.x + self.dir[0] < 0:
+                self.bounce_x()
         # Save "highest" y value as apex
         if int(self.y) < self.apex:
             self.apex = int(self.y)
 
     def bounce_y(self):
-        self.dir = (self.dir[0] * 0.98, - self.dir[1] * 0.98)
-        # self.y = screen_height - self.radius
+        self.dir = (self.dir[0] * friction, - self.dir[1] * friction)
+
+    def bounce_x(self):
+        self.dir = (- self.dir[0] * friction, self.dir[1] * friction)
 
     def display_pos(self):
         pos = "(" + str(int(self.x)) + ", " + str(screen_height - int(self.y)) + ")"
@@ -182,6 +188,7 @@ balls = []
 clock = pygame.time.Clock()
 frame_rate = 60
 g_constant = 9.8 / frame_rate
+friction = 0.98
 
 show_info = True
 trace_type = 0
@@ -190,6 +197,7 @@ aim_up = False
 mouse_hold = False
 running = True
 pause = False
+bounce_x = False
 while running:
     # Reset screen
     screen.fill((0, 0, 0))
