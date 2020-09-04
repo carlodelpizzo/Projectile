@@ -12,7 +12,7 @@ def truncate(number, digits):
 pygame.init()
 # Initialize screen
 screen_width = 700
-screen_height = 500
+screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
 # Title
 pygame.display.set_caption("Projectile")
@@ -40,7 +40,6 @@ class Launcher:
         self.length = 60
 
     def draw(self):
-        pygame.draw.circle(screen, fg_color, (0, screen_height), 7)
         end_x = int(cos(radians(self.angle)) * self.length)
         end_y = screen_height - int(sin(radians(self.angle)) * self.length)
         pygame.draw.line(screen, fg_color, (0, screen_height), (end_x, end_y), 3)
@@ -58,30 +57,30 @@ class Ball:
         self.x = 0
         self.y = screen_height
         self.dir = (0, 0)
-        self.g = 0
         self.radius = 7
         self.path = []
         self.color = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
         self.apex = screen_height
 
     def draw(self):
-        pygame.draw.circle(screen, fg_color, (int(self.x), int(self.y)), self.radius)
+        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
 
     def move(self):
         self.path.append((int(self.x), int(self.y)))
-        if self.y + self.dir[1] + self.g <= screen_height - self.radius:
+        # If within screen top/bottom on next move
+        if screen_height - self.radius + 1 >= self.y + self.dir[1] > 0 + self.radius - 1:
             self.x += self.dir[0]
-            self.y += self.dir[1] + self.g
-            self.g += g_constant
+            self.dir = (self.dir[0], self.dir[1] + g_constant)
+            self.y += self.dir[1]
         else:
-            self.bounce()
+            self.bounce_y()
+        # Save "highest" y value as apex
         if int(self.y) < self.apex:
             self.apex = int(self.y)
 
-    def bounce(self):
+    def bounce_y(self):
         self.dir = (self.dir[0] * 0.98, - self.dir[1] * 0.98)
-        self.g = 0
-        self.y = screen_height - self.radius
+        # self.y = screen_height - self.radius
 
     def display_pos(self):
         pos = "(" + str(int(self.x)) + ", " + str(screen_height - int(self.y)) + ")"
@@ -136,18 +135,23 @@ def murder_balls(kill_mode):
 
 def display_info():
     stat_num = 0
-    # Display number of balls
-    # num_balls = str(len(balls))
-    # dis_num_balls = font.render("Balls: " + num_balls, True, white)
-    # screen.blit(dis_num_balls, (0, font_size * stat_num))
-    # stat_num += 1
-    # Display power
+    # Display player power
     dis_launch_power = font.render("Power: " + str(player.power), True, white)
     screen.blit(dis_launch_power, (0, font_size * stat_num))
     stat_num += 1
     # Display player angle
     dis_player_angle = font.render("Angle: " + str(player.angle), True, white)
     screen.blit(dis_player_angle, (0, font_size * stat_num))
+    stat_num += 1
+    # Display x vector component
+    x_comp = truncate(player.power * cos(radians(player.angle)), 1)
+    dis_x_comp = font.render("X Comp: " + str(x_comp), True, white)
+    screen.blit(dis_x_comp, (0, font_size * stat_num))
+    stat_num += 1
+    # Display y vector component
+    y_comp = truncate(player.power * sin(radians(player.angle)), 1)
+    dis_y_comp = font.render("Y Comp: " + str(y_comp), True, white)
+    screen.blit(dis_y_comp, (0, font_size * stat_num))
     stat_num += 1
 
 
@@ -162,11 +166,13 @@ def mouse_click():
 
 def sim_path(x_pwr_sim, y_pwr_sim):
     sim = Ball()
+    sim.color = fg_color
     sim.dir = (x_pwr_sim, y_pwr_sim)
     t = 0
     while sim.x < screen_width and t < 10000:
         sim.move()
         t += 1
+    sim.display_apex()
     return sim.path
 
 
