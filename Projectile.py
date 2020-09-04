@@ -4,9 +4,21 @@ from math import *
 import random
 
 
-def truncate(number, digits):
-    stepper = 10.0 * digits
-    return trunc(stepper * number) / stepper
+def round_nearest_int(number):
+    if number % 1 >= 0.5:
+        number = int(number) + 1
+    else:
+        number = int(number)
+    return number
+
+
+def trunc_round(number, digits):
+    if digits > 0:
+        stepper = 10.0 * digits
+    else:
+        stepper = 1
+    rounded = round_nearest_int(stepper * number)
+    return rounded / stepper
 
 
 pygame.init()
@@ -26,8 +38,10 @@ red = [255, 0, 0]
 font_size = 25
 stat_font_size = 17
 font_face = "Helvetica"
-font = pygame.font.SysFont(font_face, font_size)
+main_font = pygame.font.SysFont(font_face, font_size)
 stat_font = pygame.font.SysFont(font_face, stat_font_size)
+pause_font = pygame.font.SysFont(font_face, font_size)
+pause_font.set_bold(True)
 
 
 class Launcher:
@@ -67,7 +81,7 @@ class Ball:
         pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
 
     def move(self):
-        self.path.append((int(self.x), int(self.y)))
+        self.path.append((self.x, self.y))
         # If within screen top/bottom on next move
         if screen_height > self.y + self.dir[1] > 0:
             self.x += self.dir[0]
@@ -79,14 +93,14 @@ class Ball:
             if screen_width < self.x + self.dir[0] or self.x + self.dir[0] < 0:
                 self.bounce_x()
         # Save "highest" y value as apex
-        if int(self.y) < self.apex:
-            self.apex = int(self.y)
+        if self.y < self.apex:
+            self.apex = self.y
 
     def bounce_y(self):
-        self.dir = (self.dir[0] * friction, - self.dir[1] * friction)
+        self.dir = (self.dir[0] * friction, - (self.dir[1] * friction))
 
     def bounce_x(self):
-        self.dir = (- self.dir[0] * friction, self.dir[1] * friction)
+        self.dir = (- (self.dir[0] * friction), self.dir[1] * friction)
 
     def display_pos(self):
         pos = "(" + str(int(self.x)) + ", " + str(screen_height - int(self.y)) + ")"
@@ -96,23 +110,24 @@ class Ball:
     def display_apex(self):
         for i in range(len(self.path)):
             if self.apex == self.path[i][1]:
-                apex_str = "(" + str(self.path[i][0]) + ", " + str(screen_height - self.path[i][1]) + ")"
+                apex_str = "(" + str(int(self.path[i][0])) + ", " + str(int(screen_height - self.path[i][1])) + ")"
                 dis_apex = stat_font.render(apex_str, True, white)
-                screen.blit(dis_apex, (self.path[i][0] + self.radius, self.path[i][1] - (self.radius * 2)))
-                pygame.draw.circle(screen, self.color, (self.path[i][0], self.path[i][1]), int(self.radius / 3))
+                screen.blit(dis_apex, (int(self.path[i][0] + self.radius), int(self.path[i][1] - (self.radius * 2))))
+                pygame.draw.circle(screen, self.color,
+                                   (int(self.path[i][0]), int(self.path[i][1])), int(self.radius / 3))
                 break
 
 
 def dis_dot_path(path, dot_color, radius):
     for i in range(len(path)):
         if i % 2 != 0:
-            pygame.draw.circle(screen, dot_color, (path[i][0], path[i][1]), int(radius / 3))
+            pygame.draw.circle(screen, dot_color, (int(path[i][0]), int(path[i][1])), int(radius / 3))
 
 
 def dis_line_path(path, line_color):
     for i in range(len(path) - 1):
-        pygame.draw.line(screen, line_color, (path[i][0], path[i][1]),
-                         (path[i + 1][0], path[i + 1][1]), 1)
+        pygame.draw.line(screen, line_color, (int(path[i][0]), int(path[i][1])),
+                         (int(path[i + 1][0]), int(path[i + 1][1])), 1)
 
 
 # Create grid of unit = 10 pixels
@@ -142,21 +157,21 @@ def murder_balls(kill_mode):
 def display_info():
     stat_num = 0
     # Display player power
-    dis_launch_power = font.render("Power: " + str(player.power), True, white)
+    dis_launch_power = main_font.render("Power: " + str(player.power), True, white)
     screen.blit(dis_launch_power, (0, font_size * stat_num))
     stat_num += 1
     # Display player angle
-    dis_player_angle = font.render("Angle: " + str(player.angle), True, white)
+    dis_player_angle = main_font.render("Angle: " + str(player.angle), True, white)
     screen.blit(dis_player_angle, (0, font_size * stat_num))
     stat_num += 1
     # Display x vector component
-    x_comp = truncate(player.power * cos(radians(player.angle)), 1)
-    dis_x_comp = font.render("X Comp: " + str(x_comp), True, white)
+    x_comp = trunc_round(player.power * cos(radians(player.angle)), 1)
+    dis_x_comp = main_font.render("X Comp: " + str(x_comp), True, white)
     screen.blit(dis_x_comp, (0, font_size * stat_num))
     stat_num += 1
     # Display y vector component
-    y_comp = truncate(player.power * sin(radians(player.angle)), 1)
-    dis_y_comp = font.render("Y Comp: " + str(y_comp), True, white)
+    y_comp = trunc_round(player.power * sin(radians(player.angle)), 1)
+    dis_y_comp = main_font.render("Y Comp: " + str(y_comp), True, white)
     screen.blit(dis_y_comp, (0, font_size * stat_num))
     stat_num += 1
 
@@ -166,8 +181,8 @@ def mouse_click():
     mouse_pos = pygame.mouse.get_pos()
     mouse_distance = sqrt(
         mouse_pos[0] * mouse_pos[0] + (screen_height - mouse_pos[1]) * (screen_height - mouse_pos[1]))
-    player.angle = truncate(degrees(acos(mouse_pos[0] / mouse_distance)), 1)
-    player.power = truncate(mouse_distance * 0.03, 1)
+    player.angle = trunc_round(degrees(acos(mouse_pos[0] / mouse_distance)), 1)
+    player.power = trunc_round(mouse_distance * 0.03, 1)
 
 
 def sim_path(x_pwr_sim, y_pwr_sim):
@@ -187,8 +202,9 @@ player = Launcher()
 balls = []
 clock = pygame.time.Clock()
 frame_rate = 60
-g_constant = 9.8 / frame_rate
-friction = 0.98
+# g_constant = 9.8 / frame_rate
+g_constant = 0.3
+friction = 0.95
 
 show_info = True
 trace_type = 0
@@ -218,9 +234,9 @@ while running:
                 running = False
                 break
             # Pause game
-            if keys[K_p] and not pause:
+            if keys[K_SPACE] and not pause:
                 pause = True
-            elif keys[K_p] and pause:
+            elif keys[K_SPACE] and pause:
                 pause = False
             # Advance 1 frame
             if keys[K_n] and pause:
@@ -228,22 +244,23 @@ while running:
                     ball.move()
             # Lower Power
             if (keys[K_LSHIFT] or keys[K_RSHIFT]) and keys[K_DOWN]:
-                player.power -= 0.5
+                player.power -= 0.1
             # Raise Power
             if (keys[K_LSHIFT] or keys[K_RSHIFT]) and keys[K_UP]:
-                player.power += 0.5
+                player.power += 0.1
             # Lower launcher
             if keys[K_DOWN] and not aim_down and not (keys[K_LSHIFT] or keys[K_RSHIFT]):
                 aim_down = True
             if keys[K_RIGHT]:
-                player.angle -= 0.5
+                player.angle -= 0.1
             # Raise launcher
             if keys[K_UP] and not aim_up and not (keys[K_LSHIFT] or keys[K_RSHIFT]):
                 aim_up = True
             if keys[K_LEFT]:
-                player.angle += 0.5
+                # player.angle = truncate(player.angle + 0.1, 1)
+                player.angle += 0.1
             # Launch launcher
-            if keys[K_SPACE]:
+            if keys[K_l]:
                 player.launch_ball()
             # Show info
             if keys[K_s] and not show_info:
@@ -278,6 +295,14 @@ while running:
     # Show stats and info
     if show_info:
         display_info()
+    if pause:
+        # Show pause symbol
+        pause_symbol = pause_font.render("| |", True, white)
+        screen.blit(pause_symbol, (screen_width - 25, 0))
+        # Show player trajectory
+        x_p = player.power * cos(radians(player.angle))
+        y_p = - player.power * sin(radians(player.angle))
+        dis_line_path(sim_path(x_p, y_p), fg_color)
     # Player updates
     if aim_up and player.angle < 90:
         player.angle += 0.5
@@ -285,9 +310,10 @@ while running:
         player.angle -= 0.5
     if mouse_hold:
         mouse_click()
-        x_p = player.power * cos(radians(player.angle))
-        y_p = - player.power * sin(radians(player.angle))
-        dis_line_path(sim_path(x_p, y_p), fg_color)
+        if not pause:
+            x_p = player.power * cos(radians(player.angle))
+            y_p = - player.power * sin(radians(player.angle))
+            dis_line_path(sim_path(x_p, y_p), fg_color)
     player.draw()
 
     # Ball updates
