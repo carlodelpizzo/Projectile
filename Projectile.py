@@ -91,6 +91,7 @@ class Ball:
             self.x += self.dir[0]
             self.y += self.dir[1]
             self.dir = (self.dir[0], self.dir[1] + g_constant)
+        # If outside screen top/bottom
         elif self.y > screen_height or self.y < 0:
             self.bounce_y()
         if bounce_x:
