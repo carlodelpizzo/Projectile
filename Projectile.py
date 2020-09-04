@@ -17,8 +17,7 @@ def trunc_round(number, digits):
         stepper = 10.0 * digits
     else:
         stepper = 1
-    rounded = round_nearest_int(stepper * number)
-    return rounded / stepper
+    return round_nearest_int(stepper * number) / stepper
 
 
 pygame.init()
@@ -157,11 +156,11 @@ def murder_balls(kill_mode):
 def display_info():
     stat_num = 0
     # Display player power
-    dis_launch_power = main_font.render("Power: " + str(player.power), True, white)
+    dis_launch_power = main_font.render("Power: " + str(trunc_round(player.power, 1)), True, white)
     screen.blit(dis_launch_power, (0, font_size * stat_num))
     stat_num += 1
     # Display player angle
-    dis_player_angle = main_font.render("Angle: " + str(player.angle), True, white)
+    dis_player_angle = main_font.render("Angle: " + str(trunc_round(player.angle, 1)), True, white)
     screen.blit(dis_player_angle, (0, font_size * stat_num))
     stat_num += 1
     # Display x vector component
