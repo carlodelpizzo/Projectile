@@ -80,23 +80,31 @@ class Ball:
         pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
 
     def move(self):
+        # Log path
         self.path.append((self.x, self.y))
-        # If within screen top/bottom on next move
-        if screen_height > self.y + self.dir[1] > 0:
+        # Log apex
+        if self.dir[1] < 0 and self.dir[1] + g_constant > 0:
+            if self.apex > self.y + self.dir[1]:
+                self.apex = self.y + self.dir[1]
+        # If within screen top/bottom
+        if screen_height >= self.y >= 0:
             self.x += self.dir[0]
             self.y += self.dir[1]
             self.dir = (self.dir[0], self.dir[1] + g_constant)
-        else:
+        elif self.y > screen_height or self.y < 0:
             self.bounce_y()
         if bounce_x:
             if screen_width < self.x + self.dir[0] or self.x + self.dir[0] < 0:
                 self.bounce_x()
-        # Save "highest" y value as apex
-        if self.y < self.apex:
-            self.apex = self.y
 
     def bounce_y(self):
-        self.dir = (self.dir[0] * friction, - (self.dir[1] * friction))
+        if self.y > screen_height:
+            self.dir = (self.dir[0] * friction, - abs(self.dir[1] * friction))
+        else:
+            self.dir = (self.dir[0] * friction, abs(self.dir[1] * friction))
+        self.x += self.dir[0]
+        self.y += self.dir[1]
+        self.dir = (trunc_round(self.dir[0], 5), trunc_round(self.dir[1] + (g_constant * 2), 5))
 
     def bounce_x(self):
         self.dir = (- (self.dir[0] * friction), self.dir[1] * friction)
@@ -203,7 +211,7 @@ clock = pygame.time.Clock()
 frame_rate = 60
 # g_constant = 9.8 / frame_rate
 g_constant = 0.3
-friction = 0.95
+friction = 1.0
 
 show_info = True
 trace_type = 0
