@@ -211,11 +211,11 @@ def display_info():
 
 # Update player angle and power based on mouse pos
 def mouse_click():
-    mouse_pos = pygame.mouse.get_pos()
+    m_pos = pygame.mouse.get_pos()
     mouse_distance = sqrt(
-        mouse_pos[0] * mouse_pos[0] + (screen_height - mouse_pos[1]) * (screen_height - mouse_pos[1]))
+        m_pos[0] * m_pos[0] + (screen_height - m_pos[1]) * (screen_height - m_pos[1]))
     if mouse_left:
-        player.angle = trunc_round(degrees(acos(mouse_pos[0] / mouse_distance)), 1)
+        player.angle = trunc_round(degrees(acos(m_pos[0] / mouse_distance)), 1)
         player.power = trunc_round(mouse_distance * 0.03, 1)
     if mouse_right:
         if not target_lock:
@@ -223,8 +223,8 @@ def mouse_click():
                 targets.pop(0)
         elif target_lock:
             if len(targets) == 0:
-                targets.append(Target(mouse_pos[0], mouse_pos[1]))
-            targets[0].pos = mouse_pos
+                targets.append(Target(m_pos[0], m_pos[1]))
+            targets[0].pos = m_pos
 
 
 def sim_path(x_pwr_sim, y_pwr_sim):
