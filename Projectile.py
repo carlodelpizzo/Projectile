@@ -126,6 +126,23 @@ class Ball:
                 break
 
 
+class Target:
+
+    def __init__(self, x, y):
+        self.pos = (x, y)
+        self.x = self.pos[0]
+        self.y = self.pos[1]
+        self.y_alt = screen_height - self.y
+
+    def draw(self):
+        self.x = self.pos[0]
+        self.y = self.pos[1]
+        self.y_alt = screen_height - self.y
+        pygame.draw.line(screen, red, (self.x - 5, self.y - 5), (self.x + 5, self.y + 5), 1)
+        pygame.draw.line(screen, red, (self.x - 5, self.y + 5), (self.x + 5, self.y - 5), 1)
+        pygame.draw.circle(screen, bg_color, self.pos, 2)
+
+
 def dis_dot_path(path, dot_color, radius):
     for i in range(len(path)):
         if i % 2 != 0:
@@ -189,8 +206,17 @@ def mouse_click():
     mouse_pos = pygame.mouse.get_pos()
     mouse_distance = sqrt(
         mouse_pos[0] * mouse_pos[0] + (screen_height - mouse_pos[1]) * (screen_height - mouse_pos[1]))
-    player.angle = trunc_round(degrees(acos(mouse_pos[0] / mouse_distance)), 1)
-    player.power = trunc_round(mouse_distance * 0.03, 1)
+    if mouse_left:
+        player.angle = trunc_round(degrees(acos(mouse_pos[0] / mouse_distance)), 1)
+        player.power = trunc_round(mouse_distance * 0.03, 1)
+    if mouse_right:
+        if not target_lock:
+            if len(targets) >= 1:
+                targets.pop(0)
+        elif target_lock:
+            if len(targets) == 0:
+                targets.append(Target(mouse_pos[0], mouse_pos[1]))
+            targets[0].pos = mouse_pos
 
 
 def sim_path(x_pwr_sim, y_pwr_sim):
@@ -198,7 +224,7 @@ def sim_path(x_pwr_sim, y_pwr_sim):
     sim.color = fg_color
     sim.dir = (x_pwr_sim, y_pwr_sim)
     t = 0
-    while sim.x < screen_width and t < 10000:
+    while sim.x < screen_width and t < 1000:
         sim.move()
         t += 1
     sim.display_apex()
@@ -208,16 +234,19 @@ def sim_path(x_pwr_sim, y_pwr_sim):
 # Game data
 player = Launcher()
 balls = []
+targets = []
 clock = pygame.time.Clock()
 frame_rate = 60
-# g_constant = 9.8 / frame_rate
-g_constant = 0.3
-friction = 1.0
+g_constant = 9.8 / frame_rate
+friction = 0.98
 
 show_info = True
-trace_type = 0
+trace_type = 1
 aim_down = False
 aim_up = False
+target_lock = False
+mouse_left = False
+mouse_right = False
 mouse_hold = False
 running = True
 pause = False
@@ -294,11 +323,24 @@ while running:
                 aim_up = False
 
         # Mouse button events
+        mouse_pos = pygame.mouse.get_pos()
         if event.type == pygame.MOUSEBUTTONDOWN and not mouse_hold:
-            mouse_click()
             mouse_hold = True
+            if event.button == 1:
+                mouse_left = True
+            elif event.button == 3 and not target_lock:
+                mouse_right = True
+                target_lock = True
+            elif event.button == 3 and target_lock:
+                mouse_right = True
+                if targets[0].x - 10 < mouse_pos[0] < targets[0].x + 10:
+                    if targets[0].y - 10 < mouse_pos[1] < targets[0].y + 10:
+                        target_lock = False
+            mouse_click()
         elif event.type == pygame.MOUSEBUTTONUP and mouse_hold:
             mouse_hold = False
+            mouse_left = False
+            mouse_right = False
 
     # Show stats and info
     if show_info:
@@ -337,6 +379,10 @@ while running:
         elif trace_type == 2:
             dis_dot_path(ball.path, ball.color, 2)
     murder_balls(True)
+
+    # Targets
+    for target in targets:
+        target.draw()
 
     clock.tick(frame_rate)
     pygame.display.flip()
