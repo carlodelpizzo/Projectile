@@ -247,24 +247,24 @@ def mouse_click():
 
     # Why tf does this roll back the solution?
     def hunt_y(y_vel, target_t):
-        y_vel = abs(y_vel)
-        y_pos = 0
-        y_dir = 0
-        target_pos = screen_height - targets[0].y
-        target_range = 10
-        test = target_pos - target_range
-        test2 = target_pos + target_range
-        for i in range(0, int(target_t)):
-            y_dir -= g_constant / 2
-            y_pos += y_vel + y_dir
-        if target_pos - 30 < y_pos < target_pos + target_range:
-            player.y_power = - y_vel
-        elif y_pos > target_pos + target_range:
-            y_vel -= 0.5
-            hunt_y(y_vel, target_t)
-        elif y_pos < target_pos - target_range:
-            y_vel += 0.5
-            hunt_y(y_vel, target_t)
+        while True:
+            y_vel = abs(y_vel)
+            y_pos = 0
+            y_dir = 0
+            target_pos = screen_height - targets[0].y
+            target_range = 10
+            test = target_pos - target_range
+            test2 = target_pos + target_range
+            for i in range(0, int(target_t)):
+                y_dir -= g_constant / 2
+                y_pos += y_vel + y_dir
+            if target_pos - 30 < y_pos < target_pos + target_range:
+                player.y_power = - y_vel
+                break
+            elif y_pos > target_pos + target_range:
+                y_vel -= 0.5
+            elif y_pos < target_pos - target_range:
+                y_vel += 0.5
 
     mouse_pos1 = pygame.mouse.get_pos()
     mouse_distance = sqrt(
