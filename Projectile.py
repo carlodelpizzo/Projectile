@@ -49,9 +49,9 @@ class Launcher:
         self.x = 0
         self.y = screen_height
         self.angle = 45.0
-        self.power = 12
-        self.x_power = trunc_round(cos(radians(self.angle)) * self.power, 1)
-        self.y_power = - trunc_round(sin(radians(self.angle)) * self.power, 1)
+        self.power = 12.0
+        self.x_power = cos(radians(self.angle)) * self.power
+        self.y_power = - sin(radians(self.angle)) * self.power
         self.length = 60
         self.color = fg_color
 
@@ -66,13 +66,13 @@ class Launcher:
 
     def update(self, new_value, variable):
         if variable == 'angle' and self.angle != new_value:
-            self.angle = trunc_round(new_value, 1)
-            self.x_power = trunc_round(cos(radians(self.angle)) * self.power, 1)
-            self.y_power = - trunc_round(sin(radians(self.angle)) * self.power, 1)
+            self.angle = new_value
+            self.x_power = cos(radians(self.angle)) * self.power
+            self.y_power = - sin(radians(self.angle)) * self.power
         elif variable == 'power' and self.x_power != new_value:
             self.power = new_value
-            self.x_power = trunc_round(cos(radians(self.angle)) * self.power, 1)
-            self.y_power = - trunc_round(sin(radians(self.angle)) * self.power, 1)
+            self.x_power = cos(radians(self.angle)) * self.power
+            self.y_power = - sin(radians(self.angle)) * self.power
 
 
 class Ball:
@@ -218,7 +218,8 @@ def display_info():
     # Display player power
     if mouse_hold or pause:
         # Display player angle
-        dis_player_angle = main_font.render("Angle: " + str(trunc_round(player.angle, 1)), True, white)
+        dis_player_angle = trunc_round(player.angle, 1)
+        dis_player_angle = main_font.render("Angle: " + str(dis_player_angle), True, white)
         screen.blit(dis_player_angle, (0, font_size * stat_num))
         stat_num += 1
     # Display Ball t
@@ -235,12 +236,12 @@ def display_info():
     #         screen.blit(apex_text, (0, font_size * stat_num))
     #         stat_num += 1
     # Display x vector component
-    x_comp = player.x_power
+    x_comp = trunc_round(player.x_power, 1)
     x_comp = main_font.render("X Comp: " + str(x_comp), True, white)
     screen.blit(x_comp, (0, font_size * stat_num))
     stat_num += 1
     # Display y vector component
-    y_comp = player.y_power
+    y_comp = trunc_round(player.y_power, 1)
     y_comp = main_font.render("Y Comp: " + str(y_comp), True, white)
     screen.blit(y_comp, (0, font_size * stat_num))
     stat_num += 1
@@ -261,6 +262,7 @@ def mouse_click():
                 y_pos += y_vel + y_dir
             if target_pos - 30 < y_pos < target_pos + target_range:
                 player.y_power = - y_vel
+                player.power = sqrt((player.y_power * player.y_power) + (player.x_power * player.x_power))
                 break
             elif y_pos > target_pos + target_range:
                 y_vel -= 0.5
