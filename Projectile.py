@@ -116,16 +116,17 @@ class Ball:
                 self.dir = (-(self.dir[0] * friction), self.dir[1] * friction)
 
     def display_pos(self):
-        pos = "(" + str(int(self.x)) + ", " + str(screen_height - int(self.y)) + ")"
-        display_pos = stat_font.render(pos, True, white)
-        screen.blit(display_pos, (int(self.x + self.radius), int(self.y - (self.radius * 2))))
+        pos = "(" + str(trunc_round(self.x / 10, 1)) + ", " + \
+              str(trunc_round((screen_height - int(self.y)) / 10, 1)) + ")"
+        pos = stat_font.render(pos, True, white)
+        screen.blit(pos, (int(self.x + self.radius), int(self.y - (self.radius * 2))))
 
     def display_apex(self):
         if self.apex_y < screen_height:
-            apex_str = "(" + str(round_nearest_int(self.apex_x)) + ", " + \
-                       str(round_nearest_int(screen_height - self.apex_y)) + ")"
-            dis_apex = stat_font.render(apex_str, True, white)
-            screen.blit(dis_apex, (int(self.apex_x + self.radius), int(self.apex_y - (self.radius * 2))))
+            apex = "(" + str(trunc_round(self.apex_x / 10, 1)) + ", " + \
+                       str(trunc_round((screen_height - self.apex_y) / 10, 1)) + ")"
+            apex = stat_font.render(apex, True, white)
+            screen.blit(apex, (int(self.apex_x + self.radius), int(self.apex_y - (self.radius * 2))))
             pygame.draw.circle(screen, self.color,
                                (int(self.apex_x), int(self.apex_y)), int(self.radius / 3))
 
@@ -176,9 +177,21 @@ def dis_line_path(path, line_color, line_type):
 # Create grid of unit = 10 pixels
 def bg_grid():
     for i in range(0, round_nearest_int(screen_width / 10) + 1):
-        pygame.draw.rect(screen, grid_color, (10 * i, 0, 1, screen_height))
+        if i % 10 == 0:
+            pygame.draw.rect(screen, (grid_color[0] + 20, grid_color[1] + 20, grid_color[2] + 20),
+                             (10 * i, 0, 2, screen_height))
+        elif i % 5 == 0:
+            pygame.draw.rect(screen, grid_color, (10 * i, 0, 2, screen_height))
+        else:
+            pygame.draw.rect(screen, grid_color, (10 * i, 0, 1, screen_height))
     for i in range(0, round_nearest_int(screen_height / 10) + 1):
-        pygame.draw.rect(screen, grid_color, (0, screen_height - 10 * i, screen_width, 1))
+        if i % 10 == 0:
+            pygame.draw.rect(screen, (grid_color[0] + 20, grid_color[1] + 20, grid_color[2] + 20),
+                             (0, screen_height - 10 * i, screen_width, 2))
+        elif i % 5 == 0:
+            pygame.draw.rect(screen, grid_color, (0, screen_height - 10 * i, screen_width, 2))
+        else:
+            pygame.draw.rect(screen, grid_color, (0, screen_height - 10 * i, screen_width, 1))
 
 
 # Kill off screen balls
@@ -230,7 +243,7 @@ def mouse_click():
         mouse_pos1[0] * mouse_pos1[0] + (screen_height - mouse_pos1[1]) * (screen_height - mouse_pos1[1]))
     if mouse_left:
         player.angle = trunc_round(degrees(acos(mouse_pos1[0] / mouse_distance)), 1)
-        player.power = trunc_round(mouse_distance * 0.02, 1)
+        player.power = trunc_round(mouse_distance * 0.06, 1)
         player.update_power()
     if mouse_right:
         if not target_lock:
@@ -259,7 +272,7 @@ balls = []
 targets = []
 clock = pygame.time.Clock()
 frame_rate = 60
-g_constant = 9.8 / frame_rate
+g_constant = 98 / frame_rate
 friction = 0.98
 
 walls = False
