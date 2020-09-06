@@ -49,8 +49,9 @@ class Launcher:
         self.x = 0
         self.y = screen_height
         self.angle = 45.0
-        self.x_power = 10
-        self.y_power = - 10
+        self.power = 12
+        self.x_power = (self.power * cos(radians(self.angle)))
+        self.y_power = - (self.power * sin(radians(self.angle)))
         self.length = 60
         self.color = fg_color
 
@@ -65,14 +66,13 @@ class Launcher:
 
     def update(self, new_value, variable):
         if variable == 'angle' and self.angle != new_value:
-            r = abs(self.y_power / sin(radians(self.angle)))
-            self.x_power = trunc_round(cos(radians(new_value)) * r, 1)
-            self.y_power = - trunc_round(sin(radians(new_value)) * r, 1)
-            self.angle = new_value
+            self.angle = trunc_round(new_value, 1)
+            self.x_power = trunc_round(cos(radians(self.angle)) * self.power, 1)
+            self.y_power = - trunc_round(sin(radians(self.angle)) * self.power, 1)
         elif variable == 'power' and self.x_power != new_value:
-            r = abs(self.x_power / cos(radians(self.angle)))
-            self.x_power = trunc_round(new_value, 1)
-            self.y_power = - trunc_round(sin(radians(self.angle)) * r, 1)
+            self.power = new_value
+            self.x_power = trunc_round(cos(radians(self.angle)) * self.power, 1)
+            self.y_power = - trunc_round(sin(radians(self.angle)) * self.power, 1)
 
 
 class Ball:
@@ -271,6 +271,7 @@ def mouse_click():
     mouse_distance = sqrt(
         mouse_pos1[0] * mouse_pos1[0] + (screen_height - mouse_pos1[1]) * (screen_height - mouse_pos1[1]))
     if mouse_left:
+        player.update(trunc_round((screen_height - mouse_pos1[1]) * 0.1, 1), 'power')
         player.update(trunc_round(degrees(acos(mouse_pos1[0] / mouse_distance)), 1), 'angle')
     elif mouse_right:
         if not target_lock:
