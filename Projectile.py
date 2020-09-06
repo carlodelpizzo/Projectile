@@ -263,6 +263,7 @@ def mouse_click():
             if target_pos - 30 < y_pos < target_pos + target_range:
                 player.y_power = - y_vel
                 player.power = sqrt((player.y_power * player.y_power) + (player.x_power * player.x_power))
+                player.update(degrees(acos(player.x_power / player.power)), 'angle')
                 break
             elif y_pos > target_pos + target_range:
                 y_vel -= 0.5
@@ -273,8 +274,8 @@ def mouse_click():
     mouse_distance = sqrt(
         mouse_pos1[0] * mouse_pos1[0] + (screen_height - mouse_pos1[1]) * (screen_height - mouse_pos1[1]))
     if mouse_left:
-        player.update(trunc_round((screen_height - mouse_pos1[1]) * 0.1, 1), 'power')
-        player.update(trunc_round(degrees(acos(mouse_pos1[0] / mouse_distance)), 1), 'angle')
+        player.update((screen_height - mouse_pos1[1]) * 0.1, 'power')
+        player.update(degrees(acos(mouse_pos1[0] / mouse_distance)), 'angle')
     elif mouse_right:
         if not target_lock:
             if len(targets) >= 1:
@@ -284,7 +285,7 @@ def mouse_click():
                 targets.append(Target(mouse_pos1[0], mouse_pos1[1]))
             targets[0].x = mouse_pos1[0]
             targets[0].y = mouse_pos1[1]
-            player.angle = trunc_round(degrees(acos(mouse_pos1[0] / mouse_distance)), 1)
+            player.angle = degrees(acos(mouse_pos1[0] / mouse_distance))
             t = targets[0].x / player.x_power
             hunt_y(player.y_power, t)
 
