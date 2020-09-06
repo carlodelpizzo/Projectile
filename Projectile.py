@@ -74,7 +74,8 @@ class Ball:
         self.radius = 7
         self.path = []
         self.color = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
-        self.apex = screen_height * 2
+        self.apex_y = screen_height * 2
+        self.apex_x = 0
 
     def draw(self):
         pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
@@ -83,14 +84,15 @@ class Ball:
         # Log path
         self.path.append((self.x, self.y))
         # Log apex
-        if self.dir[1] < 0 < self.dir[1] + g_constant:
-            if self.apex > self.y + self.dir[1]:
-                self.apex = self.y + self.dir[1]
+        if self.dir[1] < 0 < self.dir[1] + g_constant / 2:
+            if self.apex_y > self.y + self.dir[1]:
+                self.apex_x = self.x + self.dir[0]
+                self.apex_y = self.y + self.dir[1] + g_constant / 2
         self.bounce_y()
         self.bounce_x()
         self.x += self.dir[0]
+        self.dir = (self.dir[0], self.dir[1] + g_constant / 2)
         self.y += self.dir[1]
-        self.dir = (self.dir[0], self.dir[1] + g_constant)
 
     def bounce_y(self):
         if self.y > screen_height:
@@ -117,14 +119,13 @@ class Ball:
         screen.blit(display_pos, (int(self.x + self.radius), int(self.y - (self.radius * 2))))
 
     def display_apex(self):
-        for i in range(len(self.path)):
-            if self.apex == self.path[i][1]:
-                apex_str = "(" + str(int(self.path[i][0])) + ", " + str(int(screen_height - self.path[i][1])) + ")"
-                dis_apex = stat_font.render(apex_str, True, white)
-                screen.blit(dis_apex, (int(self.path[i][0] + self.radius), int(self.path[i][1] - (self.radius * 2))))
-                pygame.draw.circle(screen, self.color,
-                                   (int(self.path[i][0]), int(self.path[i][1])), int(self.radius / 3))
-                break
+        if self.apex_y < screen_height:
+            apex_str = "(" + str(round_nearest_int(self.apex_x)) + ", " + \
+                       str(round_nearest_int(screen_height - self.apex_y)) + ")"
+            dis_apex = stat_font.render(apex_str, True, white)
+            screen.blit(dis_apex, (int(self.apex_x + self.radius), int(self.apex_y - (self.radius * 2))))
+            pygame.draw.circle(screen, self.color,
+                               (int(self.apex_x), int(self.apex_y)), int(self.radius / 3))
 
 
 class Target:
@@ -150,10 +151,16 @@ def dis_dot_path(path, dot_color, radius):
             pygame.draw.circle(screen, dot_color, (int(path[i][0]), int(path[i][1])), radius)
 
 
-def dis_line_path(path, line_color):
+def dis_line_path(path, line_color, line_type):
+    if line_type == 'dash':
+        width = 2
+    else:
+        width = 1
     for i in range(len(path) - 1):
+        if i % 3 != 0 and line_type == 'dash':
+            continue
         pygame.draw.line(screen, line_color, (int(path[i][0]), int(path[i][1])),
-                         (int(path[i + 1][0]), int(path[i + 1][1])), 1)
+                         (int(path[i + 1][0]), int(path[i + 1][1])), width)
 
 
 # Create grid of unit = 10 pixels
@@ -192,8 +199,8 @@ def display_info():
     stat_num += 1
     # Display Ball apex
     for i in range(len(balls)):
-        if balls[i].apex < screen_height:
-            apex_text = trunc_round(screen_height - balls[i].apex, 1)
+        if balls[i].apex_y < screen_height:
+            apex_text = trunc_round(screen_height - balls[i].apex_y, 1)
             apex_text = main_font.render("Ball #" + str((i + 1)) + " apex: " + str(apex_text), True, balls[i].color)
             screen.blit(apex_text, (0, font_size * stat_num))
             stat_num += 1
@@ -215,8 +222,9 @@ def mouse_click():
     mouse_distance = sqrt(
         m_pos[0] * m_pos[0] + (screen_height - m_pos[1]) * (screen_height - m_pos[1]))
     if mouse_left:
-        player.angle = trunc_round(degrees(acos(m_pos[0] / mouse_distance)), 1)
-        player.power = trunc_round(mouse_distance * 0.03, 1)
+        new_angle = trunc_round(degrees(acos(m_pos[0] / mouse_distance)), 1)
+        player.angle = new_angle
+        player.power = trunc_round(mouse_distance * 0.02, 1)
     if mouse_right:
         if not target_lock:
             if len(targets) >= 1:
@@ -229,13 +237,11 @@ def mouse_click():
 
 def sim_path(x_pwr_sim, y_pwr_sim):
     sim = Ball()
-    sim.color = fg_color
     sim.dir = (x_pwr_sim, y_pwr_sim)
     t = 0
-    while t < 420:
+    while t < 1420:
         sim.move()
         t += 1
-    sim.display_apex()
     return sim.path
 
 
@@ -298,12 +304,12 @@ while running:
             # Lower launcher
             if keys[K_DOWN] and not aim_down and not (keys[K_LSHIFT] or keys[K_RSHIFT]):
                 aim_down = True
-            if keys[K_RIGHT]:
+            elif keys[K_RIGHT]:
                 player.angle -= 0.1
             # Raise launcher
             if keys[K_UP] and not aim_up and not (keys[K_LSHIFT] or keys[K_RSHIFT]):
                 aim_up = True
-            if keys[K_LEFT]:
+            elif keys[K_LEFT]:
                 # player.angle = truncate(player.angle + 0.1, 1)
                 player.angle += 0.1
             # Launch launcher
@@ -367,7 +373,7 @@ while running:
         # Show player trajectory
         x_p = player.power * cos(radians(player.angle))
         y_p = - player.power * sin(radians(player.angle))
-        dis_line_path(sim_path(x_p, y_p), fg_color)
+        dis_line_path(sim_path(x_p, y_p), fg_color, 'dash')
     # Player updates
     if aim_up and player.angle < 90:
         player.angle += 0.5
@@ -378,7 +384,7 @@ while running:
         if not pause:
             x_p = player.power * cos(radians(player.angle))
             y_p = - player.power * sin(radians(player.angle))
-            dis_line_path(sim_path(x_p, y_p), fg_color)
+            dis_line_path(sim_path(x_p, y_p), fg_color, 'dash')
     player.draw()
 
     # Ball updates
@@ -390,7 +396,7 @@ while running:
             ball.display_pos()
             ball.display_apex()
         if trace_type == 1:
-            dis_line_path(ball.path, ball.color)
+            dis_line_path(ball.path, ball.color, 'solid')
         elif trace_type == 2:
             dis_dot_path(ball.path, ball.color, 2)
     murder_balls(False)
