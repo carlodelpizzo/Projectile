@@ -61,10 +61,8 @@ class Launcher:
         pygame.draw.line(screen, self.color, (self.x, self.y), (end_x, end_y), 3)
 
     def launch_ball(self):
-        x_comp = self.power * cos(radians(self.angle))
-        y_comp = - self.power * sin(radians(self.angle))
         balls.append(Ball())
-        balls[len(balls) - 1].dir = (x_comp, y_comp)
+        balls[len(balls) - 1].dir = (player.x_power, player.y_power)
 
     def update_power(self):
         self.x_power = self.power * cos(radians(self.angle))
@@ -83,6 +81,7 @@ class Ball:
         self.apex = False
         self.apex_y = screen_height * 2
         self.apex_x = 0
+        self.t = 0
 
     def draw(self):
         pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
@@ -101,6 +100,7 @@ class Ball:
         self.x += self.dir[0]
         self.dir = (self.dir[0], self.dir[1] + g_constant / 2)
         self.y += self.dir[1]
+        self.t += 1
 
     def bounce_y(self):
         if self.y > screen_height and self.dir[1] > 0:
@@ -210,7 +210,7 @@ def murder_balls():
 def display_info():
     stat_num = 0
     # Display player power
-    if mouse_hold or aim_up or aim_down:
+    if mouse_hold or aim_up or aim_down or pause:
         dis_launch_power = main_font.render("Power: " + str(trunc_round(player.power, 1)), True, white)
         screen.blit(dis_launch_power, (0, font_size * stat_num))
         stat_num += 1
@@ -218,11 +218,17 @@ def display_info():
         dis_player_angle = main_font.render("Angle: " + str(trunc_round(player.angle, 1)), True, white)
         screen.blit(dis_player_angle, (0, font_size * stat_num))
         stat_num += 1
+    # Display Ball t
+    for i in range(len(balls)):
+        ball_t = balls[i].t
+        ball_t = main_font.render("Ball " + str((i + 1)) + " t: " + str(ball_t), True, balls[i].color)
+        screen.blit(ball_t, (0, font_size * stat_num))
+        stat_num += 1
     # Display Ball apex
     # for i in range(len(balls)):
     #     if balls[i].apex_y < screen_height:
     #         apex_text = trunc_round(screen_height - balls[i].apex_y, 1)
-    #         apex_text = main_font.render("Ball #" + str((i + 1)) + " apex: " + str(apex_text), True, balls[i].color)
+    #         apex_text = main_font.render("Ball " + str((i + 1)) + " apex: " + str(apex_text), True, balls[i].color)
     #         screen.blit(apex_text, (0, font_size * stat_num))
     #         stat_num += 1
     # Display x vector component
@@ -238,6 +244,28 @@ def display_info():
 
 
 def mouse_click():
+
+    # Why tf does this roll back the solution?
+    def hunt_y(y_vel, target_t):
+        y_vel = abs(y_vel)
+        y_pos = 0
+        y_dir = 0
+        target_pos = screen_height - targets[0].y
+        target_range = 10
+        test = target_pos - target_range
+        test2 = target_pos + target_range
+        for i in range(0, int(target_t)):
+            y_dir -= g_constant / 2
+            y_pos += y_vel + y_dir
+        if target_pos - 30 < y_pos < target_pos + target_range:
+            player.y_power = - y_vel
+        elif y_pos > target_pos + target_range:
+            y_vel -= 0.5
+            hunt_y(y_vel, target_t)
+        elif y_pos < target_pos - target_range:
+            y_vel += 0.5
+            hunt_y(y_vel, target_t)
+
     mouse_pos1 = pygame.mouse.get_pos()
     mouse_distance = sqrt(
         mouse_pos1[0] * mouse_pos1[0] + (screen_height - mouse_pos1[1]) * (screen_height - mouse_pos1[1]))
@@ -245,7 +273,7 @@ def mouse_click():
         player.angle = trunc_round(degrees(acos(mouse_pos1[0] / mouse_distance)), 1)
         player.power = trunc_round(mouse_distance * 0.06, 1)
         player.update_power()
-    if mouse_right:
+    elif mouse_right:
         if not target_lock:
             if len(targets) >= 1:
                 targets.pop(0)
@@ -254,6 +282,10 @@ def mouse_click():
                 targets.append(Target(mouse_pos1[0], mouse_pos1[1]))
             targets[0].x = mouse_pos1[0]
             targets[0].y = mouse_pos1[1]
+            player.angle = trunc_round(degrees(acos(mouse_pos1[0] / mouse_distance)), 1)
+            player.update_power()
+            t = targets[0].x / player.x_power
+            hunt_y(player.y_power, t)
 
 
 def sim_ball(x_pwr_sim, y_pwr_sim):
@@ -335,7 +367,6 @@ while running:
             if keys[K_UP] and not aim_up and not (keys[K_LSHIFT] or keys[K_RSHIFT]):
                 aim_up = True
             elif keys[K_LEFT]:
-                # player.angle = truncate(player.angle + 0.1, 1)
                 player.angle += 0.1
                 player.update_power()
             # Launch launcher
