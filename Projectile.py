@@ -103,17 +103,17 @@ class Ball:
         self.y += self.dir[1]
 
     def bounce_y(self):
-        if self.y > screen_height:
-            self.dir = (self.dir[0] * friction, -abs(self.dir[1] * friction))
-        elif self.y < 0 and ceiling:
-            self.dir = (self.dir[0] * friction, abs(self.dir[1] * friction))
+        if self.y > screen_height and self.dir[1] > 0:
+            self.dir = (self.dir[0] * friction, -(self.dir[1] * friction))
+        elif self.y < 0 and ceiling and self.dir[1] < 0:
+            self.dir = (self.dir[0] * friction, -(self.dir[1] * friction))
 
     def bounce_x(self):
-        if bounce_x:
-            if self.x < 0:
-                self.dir = (abs(self.dir[0] * friction), self.dir[1] * friction)
-            elif self.x > screen_width:
-                self.dir = (-(abs(self.dir[0] * friction)), self.dir[1] * friction)
+        if walls:
+            if self.x < 0 and self.dir[0] < 0:
+                self.dir = (-(self.dir[0] * friction), self.dir[1] * friction)
+            elif self.x > screen_width and self.dir[0] > 0:
+                self.dir = (-(self.dir[0] * friction), self.dir[1] * friction)
 
     def display_pos(self):
         pos = "(" + str(int(self.x)) + ", " + str(screen_height - int(self.y)) + ")"
@@ -197,20 +197,21 @@ def murder_balls():
 def display_info():
     stat_num = 0
     # Display player power
-    dis_launch_power = main_font.render("Power: " + str(trunc_round(player.power, 1)), True, white)
-    screen.blit(dis_launch_power, (0, font_size * stat_num))
-    stat_num += 1
-    # Display player angle
-    dis_player_angle = main_font.render("Angle: " + str(trunc_round(player.angle, 1)), True, white)
-    screen.blit(dis_player_angle, (0, font_size * stat_num))
-    stat_num += 1
+    if mouse_hold or aim_up or aim_down:
+        dis_launch_power = main_font.render("Power: " + str(trunc_round(player.power, 1)), True, white)
+        screen.blit(dis_launch_power, (0, font_size * stat_num))
+        stat_num += 1
+        # Display player angle
+        dis_player_angle = main_font.render("Angle: " + str(trunc_round(player.angle, 1)), True, white)
+        screen.blit(dis_player_angle, (0, font_size * stat_num))
+        stat_num += 1
     # Display Ball apex
-    for i in range(len(balls)):
-        if balls[i].apex_y < screen_height:
-            apex_text = trunc_round(screen_height - balls[i].apex_y, 1)
-            apex_text = main_font.render("Ball #" + str((i + 1)) + " apex: " + str(apex_text), True, balls[i].color)
-            screen.blit(apex_text, (0, font_size * stat_num))
-            stat_num += 1
+    # for i in range(len(balls)):
+    #     if balls[i].apex_y < screen_height:
+    #         apex_text = trunc_round(screen_height - balls[i].apex_y, 1)
+    #         apex_text = main_font.render("Ball #" + str((i + 1)) + " apex: " + str(apex_text), True, balls[i].color)
+    #         screen.blit(apex_text, (0, font_size * stat_num))
+    #         stat_num += 1
     # Display x vector component
     # x_comp = trunc_round(player.power * cos(radians(player.angle)), 1)
     # dis_x_comp = main_font.render("X Comp: " + str(x_comp), True, white)
@@ -224,11 +225,11 @@ def display_info():
 
 
 def mouse_click():
-    m_pos = pygame.mouse.get_pos()
+    mouse_pos1 = pygame.mouse.get_pos()
     mouse_distance = sqrt(
-        m_pos[0] * m_pos[0] + (screen_height - m_pos[1]) * (screen_height - m_pos[1]))
+        mouse_pos1[0] * mouse_pos1[0] + (screen_height - mouse_pos1[1]) * (screen_height - mouse_pos1[1]))
     if mouse_left:
-        player.angle = trunc_round(degrees(acos(m_pos[0] / mouse_distance)), 1)
+        player.angle = trunc_round(degrees(acos(mouse_pos1[0] / mouse_distance)), 1)
         player.power = trunc_round(mouse_distance * 0.02, 1)
         player.update_power()
     if mouse_right:
@@ -237,9 +238,9 @@ def mouse_click():
                 targets.pop(0)
         elif target_lock:
             if len(targets) == 0:
-                targets.append(Target(m_pos[0], m_pos[1]))
-            targets[0].x = m_pos[0]
-            targets[0].y = m_pos[1]
+                targets.append(Target(mouse_pos1[0], mouse_pos1[1]))
+            targets[0].x = mouse_pos1[0]
+            targets[0].y = mouse_pos1[1]
 
 
 def sim_ball(x_pwr_sim, y_pwr_sim):
@@ -261,10 +262,10 @@ frame_rate = 60
 g_constant = 9.8 / frame_rate
 friction = 0.98
 
-bounce_x = False
-ceiling = True
+walls = False
+ceiling = False
 show_info = True
-trace_type = 1
+trace_type = 1  # 0 off, 1 solid path, 2 dot path
 aim_down = False
 aim_up = False
 target_lock = False
