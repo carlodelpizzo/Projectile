@@ -178,7 +178,7 @@ def bg_grid():
     for i in range(0, round_nearest_int(screen_width / 10) + 1):
         pygame.draw.rect(screen, grid_color, (10 * i, 0, 1, screen_height))
     for i in range(0, round_nearest_int(screen_height / 10) + 1):
-        pygame.draw.rect(screen, grid_color, (0, 10 * i, screen_width, 1))
+        pygame.draw.rect(screen, grid_color, (0, screen_height - 10 * i, screen_width, 1))
 
 
 # Kill off screen balls
