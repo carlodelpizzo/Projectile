@@ -50,8 +50,8 @@ class Launcher:
         self.y = screen_height
         self.angle = 45.0
         self.power = 12
-        self.x_power = (self.power * cos(radians(self.angle)))
-        self.y_power = - (self.power * sin(radians(self.angle)))
+        self.x_power = trunc_round(cos(radians(self.angle)) * self.power, 1)
+        self.y_power = - trunc_round(sin(radians(self.angle)) * self.power, 1)
         self.length = 60
         self.color = fg_color
 
