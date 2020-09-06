@@ -62,7 +62,7 @@ class Launcher:
 
     def launch_ball(self):
         balls.append(Ball())
-        balls[len(balls) - 1].dir = (player.x_power, player.y_power)
+        balls[len(balls) - 1].dir = (self.x_power, self.y_power)
 
     def update_power(self):
         self.x_power = self.power * cos(radians(self.angle))
