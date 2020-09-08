@@ -69,7 +69,7 @@ class Launcher:
             self.angle = new_value
             self.x_power = cos(radians(self.angle)) * self.power
             self.y_power = - sin(radians(self.angle)) * self.power
-        elif variable == 'power' and self.x_power != new_value:
+        elif variable == 'power' and self.power != new_value:
             self.power = new_value
             self.x_power = cos(radians(self.angle)) * self.power
             self.y_power = - sin(radians(self.angle)) * self.power
@@ -103,8 +103,8 @@ class Ball:
                 self.apex_y = self.y + self.dir[1] + g_constant / 2
         self.bounce_y()
         self.bounce_x()
-        self.x += self.dir[0]
         self.dir = (self.dir[0], self.dir[1] + g_constant / 2)
+        self.x += self.dir[0]
         self.y += self.dir[1]
         self.t += 1
 
@@ -222,6 +222,11 @@ def display_info():
         dis_player_angle = main_font.render("Angle: " + str(dis_player_angle), True, white)
         screen.blit(dis_player_angle, (0, font_size * stat_num))
         stat_num += 1
+        # Display player power
+        dis_player_power = trunc_round(player.power / 10, 1)
+        dis_player_power = main_font.render("Power: " + str(dis_player_power), True, white)
+        screen.blit(dis_player_power, (0, font_size * stat_num))
+        stat_num += 1
     # Display Ball t
     for i in range(len(balls)):
         ball_t = balls[i].t
@@ -236,39 +241,30 @@ def display_info():
     #         screen.blit(apex_text, (0, font_size * stat_num))
     #         stat_num += 1
     # Display x vector component
-    x_comp = trunc_round(player.x_power, 1)
+    x_comp = trunc_round(player.x_power / 10, 1)
     x_comp = main_font.render("X Comp: " + str(x_comp), True, white)
     screen.blit(x_comp, (0, font_size * stat_num))
     stat_num += 1
     # Display y vector component
-    y_comp = trunc_round(player.y_power, 1)
-    y_comp = main_font.render("Y Comp: " + str(y_comp), True, white)
+    y_comp = trunc_round(player.y_power / 10, 1)
+    y_comp = main_font.render("Y Comp: " + str(-y_comp), True, white)
     screen.blit(y_comp, (0, font_size * stat_num))
     stat_num += 1
+    # Display player y pos
+    # player_y_pos = str(int(player.y))
+    # player_y_pos = main_font.render("Y Pos: " + str(player_y_pos), True, white)
+    # screen.blit(player_y_pos, (0, font_size * stat_num))
+    # stat_num += 1
 
 
 def mouse_click():
 
-    def hunt_y(y_vel, target_t):
-        while True:
-            if y_vel < 0:
-                y_vel = -y_vel
-            y_pos = 0
-            y_dir = 0
-            target_pos = screen_height - targets[0].y
-            target_range = 10
-            for i in range(0, int(target_t)):
-                y_dir -= g_constant / 2
-                y_pos += y_vel + y_dir
-            if target_pos - 30 < y_pos < target_pos + target_range:
-                player.y_power = - y_vel
-                player.power = sqrt((player.y_power * player.y_power) + (player.x_power * player.x_power))
-                player.update(degrees(acos(player.x_power / player.power)), 'angle')
-                break
-            elif y_pos > target_pos + target_range:
-                y_vel -= 0.5
-            elif y_pos < target_pos - target_range:
-                y_vel += 0.5
+    def solve_power():
+        t = sqrt(abs((((screen_height - targets[0].y) * tan(radians(player.angle))) - targets[0].x) / (g_constant / 2)))
+        t *= 2
+        vx = targets[0].x / t
+        r = vx / (cos(radians(player.angle)))
+        player.update(r, 'power')
 
     mouse_pos1 = pygame.mouse.get_pos()
     mouse_distance = sqrt(
@@ -285,9 +281,9 @@ def mouse_click():
                 targets.append(Target(mouse_pos1[0], mouse_pos1[1]))
             targets[0].x = mouse_pos1[0]
             targets[0].y = mouse_pos1[1]
-            player.angle = degrees(acos(mouse_pos1[0] / mouse_distance))
-            t = targets[0].x / player.x_power
-            hunt_y(player.y_power, t)
+            angle_to_mouse = degrees(acos(mouse_pos1[0] / mouse_distance))
+            player.angle = angle_to_mouse + ((90 - angle_to_mouse) / 2)
+            solve_power()
 
 
 def sim_ball(x_pwr_sim, y_pwr_sim):
