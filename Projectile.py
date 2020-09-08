@@ -103,7 +103,7 @@ class Ball:
                 self.apex_y = self.y + self.dir[1] + g_constant / 2
         self.bounce_y()
         self.bounce_x()
-        self.dir = (self.dir[0], self.dir[1] + g_constant / 2)
+        self.dir = (self.dir[0], self.dir[1] + (g_constant / 2))
         self.x += self.dir[0]
         self.y += self.dir[1]
         self.t += 1
@@ -260,8 +260,9 @@ def display_info():
 def mouse_click():
 
     def solve_power():
-        t = sqrt(abs((((screen_height - targets[0].y) * tan(radians(player.angle))) - targets[0].x) / (g_constant / 2)))
-        t *= 2
+        # WHY NOT WORK!!
+        t = sqrt(abs((((screen_height - targets[0].y) * (sin(radians(player.angle)) / cos(radians(player.angle))) -
+                       targets[0].x) / (g_constant / 2))))
         vx = targets[0].x / t
         r = vx / (cos(radians(player.angle)))
         player.update(r, 'power')
@@ -282,7 +283,7 @@ def mouse_click():
             targets[0].x = mouse_pos1[0]
             targets[0].y = mouse_pos1[1]
             angle_to_mouse = degrees(acos(mouse_pos1[0] / mouse_distance))
-            player.angle = angle_to_mouse + ((90 - angle_to_mouse) / 2)
+            player.update(angle_to_mouse + ((90 - angle_to_mouse) / 2), 'angle')
             solve_power()
 
 
