@@ -150,16 +150,17 @@ class Ball:
 class Target:
 
     def __init__(self, x, y):
-        # self.pos = (x, y)
         self.x = x
         self.y = y
         self.y_alt = screen_height - self.y
+        self.active = False
 
     def draw(self):
-        self.y_alt = screen_height - self.y
-        pygame.draw.line(screen, red, (self.x - 5, self.y - 5), (self.x + 5, self.y + 5), 1)
-        pygame.draw.line(screen, red, (self.x - 5, self.y + 5), (self.x + 5, self.y - 5), 1)
-        pygame.draw.circle(screen, bg_color, (self.x, self.y), 2)
+        if self.active:
+            self.y_alt = screen_height - self.y
+            pygame.draw.line(screen, red, (self.x - 5, self.y - 5), (self.x + 5, self.y + 5), 1)
+            pygame.draw.line(screen, red, (self.x - 5, self.y + 5), (self.x + 5, self.y - 5), 1)
+            pygame.draw.circle(screen, bg_color, (self.x, self.y), 2)
 
 
 def dis_dot_path(path, dot_color, radius):
@@ -215,6 +216,10 @@ def murder_balls():
 
 def display_info():
     stat_num = 0
+    dis_t_master = t_master
+    dis_t_master = main_font.render(str(dis_t_master), True, red)
+    screen.blit(dis_t_master, (0, font_size * stat_num))
+    stat_num += 1
     # Display player power
     if mouse_hold or pause:
         # Display player angle
@@ -261,10 +266,13 @@ def mouse_click():
 
     def solve_power():
         # WHY NOT WORK!!
-        t = sqrt(abs((((screen_height - targets[0].y) * (sin(radians(player.angle)) / cos(radians(player.angle))) -
-                       targets[0].x) / (g_constant / 2))))
-        vx = targets[0].x / t
-        r = vx / (cos(radians(player.angle)))
+        # t = sqrt(abs(((target.y_alt * tan(radians(player.angle)) - target.x) / (g_constant / 2))))
+        # vx = target.x / t
+        # r = vx / (cos(radians(player.angle)))
+        cos_ = cos(radians(player.angle))
+        cos2 = cos_ * cos_
+        tan_ = tan(radians(player.angle))
+        r = sqrt(abs((g_constant * target.x * target.x) / (2 * cos2 * (target.y_alt - (tan_ * target.x)))))
         player.update(r, 'power')
 
     mouse_pos1 = pygame.mouse.get_pos()
@@ -275,13 +283,11 @@ def mouse_click():
         player.update(degrees(acos(mouse_pos1[0] / mouse_distance)), 'angle')
     elif mouse_right:
         if not target_lock:
-            if len(targets) >= 1:
-                targets.pop(0)
+            target.active = False
         elif target_lock:
-            if len(targets) == 0:
-                targets.append(Target(mouse_pos1[0], mouse_pos1[1]))
-            targets[0].x = mouse_pos1[0]
-            targets[0].y = mouse_pos1[1]
+            target.active = True
+            target.x = mouse_pos1[0]
+            target.y = mouse_pos1[1]
             angle_to_mouse = degrees(acos(mouse_pos1[0] / mouse_distance))
             player.update(angle_to_mouse + ((90 - angle_to_mouse) / 2), 'angle')
             solve_power()
@@ -300,7 +306,7 @@ def sim_ball(x_pwr_sim, y_pwr_sim):
 # Game data
 player = Launcher()
 balls = []
-targets = []
+target = Target(0, 0)
 clock = pygame.time.Clock()
 frame_rate = 60
 g_constant = 98 / frame_rate
@@ -318,6 +324,7 @@ running = True
 pause = False
 fast = False
 kill_mode = False
+t_master = 0
 while running:
     # Reset screen
     screen.fill((0, 0, 0))
@@ -346,6 +353,7 @@ while running:
             if keys[K_n] and pause:
                 for ball in balls:
                     ball.move()
+                t_master += 1
             # Lower launcher angle
             if keys[K_RIGHT]:
                 player.update(player.angle - 0.1, 'angle')
@@ -374,6 +382,8 @@ while running:
             # Kill ball
             if keys[K_k] and len(balls) != 0:
                 balls.pop(len(balls) - 1)
+            elif keys[K_k]:
+                t_master = 0
             # Speed up
             if keys[K_f] and not fast:
                 fast = True
@@ -395,8 +405,8 @@ while running:
                 target_lock = True
             elif event.button == 3 and target_lock:
                 mouse_right = True
-                if targets[0].x - 10 < mouse_pos[0] < targets[0].x + 10:
-                    if targets[0].y - 10 < mouse_pos[1] < targets[0].y + 10:
+                if target.x - 10 < mouse_pos[0] < target.x + 10:
+                    if target.y - 10 < mouse_pos[1] < target.y + 10:
                         target_lock = False
             mouse_click()
         elif event.type == pygame.MOUSEBUTTONUP and mouse_hold:
@@ -408,8 +418,7 @@ while running:
         if event.type == pygame.VIDEORESIZE:
             for ball in balls:
                 ball.resize(event.h)
-            for target in targets:
-                target.y += event.h - screen_height
+            target.y += event.h - screen_height
             screen_width = event.w
             screen_height = event.h
             screen = pygame.display.set_mode((screen_width, screen_height), RESIZABLE)
@@ -451,13 +460,14 @@ while running:
     if kill_mode:
         murder_balls()
 
-    # Targets
-    for target in targets:
-        target.draw()
+    # Target
+    target.draw()
 
     if not fast:
         clock.tick(frame_rate)
     pygame.display.flip()
+    if not pause:
+        t_master += 1
 
 pygame.display.quit()
 pygame.quit()
