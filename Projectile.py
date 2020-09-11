@@ -316,19 +316,22 @@ target_lock = False
 mouse_left = False
 mouse_right = False
 mouse_hold = False
+key_hold_counter = 0
+held_keys = []
 pause = False
 fast = False
 kill_mode = False
 path_dis_counter = 0
 running = True
+temp = []
 while running:
     # Reset screen
     screen.fill((0, 0, 0))
     bg_grid()
 
-    # Event Loop
+    # Event loop
     for event in pygame.event.get():
-        # Close Window
+        # Close window
         if event.type == pygame.QUIT:
             running = False
             break
@@ -336,7 +339,7 @@ while running:
         keys = pygame.key.get_pressed()
         # Key down events
         if event.type == pygame.KEYDOWN:
-            # Close Window
+            # Close window shortcut
             if (keys[K_LCTRL] or keys[K_RCTRL]) and keys[K_w]:
                 running = False
                 break
@@ -362,22 +365,38 @@ while running:
                         ball.t -= 1
             # Lower launcher angle
             if keys[K_RIGHT]:
+                if len(held_keys) == 0:
+                    key_hold_counter = frame_rate / 2
+                if 'K_RIGHT' not in held_keys:
+                    held_keys.append('K_RIGHT')
                 player.update(player.angle - 0.1, 'angle')
                 path_dis_counter = frame_rate * 2
             # Raise launcher angle
-            elif keys[K_LEFT]:
+            if keys[K_LEFT]:
+                if len(held_keys) == 0:
+                    key_hold_counter = frame_rate / 2
+                if 'K_LEFT' not in held_keys:
+                    held_keys.append('K_LEFT')
                 player.update(player.angle + 0.1, 'angle')
                 path_dis_counter = frame_rate * 2
             # Lower launcher power
             if keys[K_DOWN]:
+                if len(held_keys) == 0:
+                    key_hold_counter = frame_rate / 2
+                if 'K_DOWN' not in held_keys:
+                    held_keys.append('K_DOWN')
                 player.update(player.power - 0.1, 'power')
                 path_dis_counter = frame_rate * 2
             # Raise launcher power
-            elif keys[K_UP]:
+            if keys[K_UP]:
+                if len(held_keys) == 0:
+                    key_hold_counter = frame_rate / 2
+                if 'K_UP' not in held_keys:
+                    held_keys.append('K_UP')
                 player.update(player.power + 0.1, 'power')
                 path_dis_counter = frame_rate * 2
             # Launch launcher
-            if keys[K_l]:
+            if keys[K_l] or keys[K_RETURN]:
                 player.launch_ball()
             # Show info
             if keys[K_s] and not show_info:
@@ -402,7 +421,14 @@ while running:
 
         # Key up events
         if event.type == pygame.KEYUP:
-            pass
+            if 'K_LEFT' in held_keys and not keys[K_LEFT]:
+                held_keys.pop(held_keys.index('K_LEFT'))
+            if 'K_RIGHT' in held_keys and not keys[K_RIGHT]:
+                held_keys.pop(held_keys.index('K_RIGHT'))
+            if 'K_DOWN' in held_keys and not keys[K_DOWN]:
+                held_keys.pop(held_keys.index('K_DOWN'))
+            if 'K_UP' in held_keys and not keys[K_UP]:
+                held_keys.pop(held_keys.index('K_UP'))
 
         # Mouse button events
         mouse_pos = pygame.mouse.get_pos()
@@ -452,6 +478,7 @@ while running:
         # Show pause symbol
         pause_symbol = pause_font.render("| |", True, white)
         screen.blit(pause_symbol, (screen_width - 50, 25))
+
     # Player updates
     if mouse_hold:
         mouse_click()
@@ -463,6 +490,22 @@ while running:
     if path_dis_counter != 0 and not mouse_hold:
         dis_line_path(trajectory.path, fg_color, trajectory, 'dash')
         path_dis_counter -= 1
+
+    # Key holds
+    if len(held_keys) != 0 and key_hold_counter > 0:
+        key_hold_counter -= 1
+    if 'K_RIGHT' in held_keys and key_hold_counter == 0:
+        player.update(player.angle - 0.1, 'angle')
+        path_dis_counter = frame_rate * 2
+    if 'K_LEFT' in held_keys and key_hold_counter == 0:
+        player.update(player.angle + 0.1, 'angle')
+        path_dis_counter = frame_rate * 2
+    if 'K_DOWN' in held_keys and key_hold_counter == 0:
+        player.update(player.power - 0.05, 'power')
+        path_dis_counter = frame_rate * 2
+    if 'K_UP' in held_keys and key_hold_counter == 0:
+        player.update(player.power + 0.05, 'power')
+        path_dis_counter = frame_rate * 2
 
     # Ball updates
     for ball in balls:
@@ -485,6 +528,7 @@ while running:
     if not fast:
         clock.tick(frame_rate)
     pygame.display.flip()
+
 
 pygame.display.quit()
 pygame.quit()
