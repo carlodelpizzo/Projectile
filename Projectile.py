@@ -168,7 +168,7 @@ class Target:
 
     def display_pos(self):
         pos = "(" + str(self.x) + ", " + \
-              str(screen_height - int(self.y)) + ")"
+              str(int(self.y_alt)) + ")"
         pos = stat_font.render(pos, True, red)
         screen.blit(pos, (int(self.x + 15), int(self.y - 20)))
 
@@ -268,7 +268,7 @@ def mouse_click():
         cos_ = cos(radians(player.angle))
         cos2 = cos_ * cos_
         tan_ = tan(radians(player.angle))
-        r = sqrt(abs((g_constant * target.x * target.x) / (2 * cos2 * (target.y_alt - (tan_ * target.x))))) + 0.05
+        r = sqrt(abs((g_constant * target.x * target.x) / (2 * cos2 * (target.y_alt - (tan_ * target.x))))) + 0.069
         player.update(r, 'power')
 
     mouse_pos1 = pygame.mouse.get_pos()
