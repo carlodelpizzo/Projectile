@@ -323,7 +323,6 @@ fast = False
 kill_mode = False
 path_dis_counter = 0
 running = True
-temp = []
 while running:
     # Reset screen
     screen.fill((0, 0, 0))
