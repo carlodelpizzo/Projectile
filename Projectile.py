@@ -309,7 +309,7 @@ g_constant = 9.8 / frame_rate
 friction = 0.98
 
 walls = False
-ceiling = True
+ceiling = False
 show_info = False
 trace_type = 1  # 0 off, 1 solid path, 2 dot path
 target_lock = False
