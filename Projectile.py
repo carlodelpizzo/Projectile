@@ -368,24 +368,27 @@ while running:
                     key_hold_counter = frame_rate / 2
                 if 'K_RIGHT' not in held_keys:
                     held_keys.append('K_RIGHT')
-                player.update(player.angle - 0.1, 'angle')
-                path_dis_counter = frame_rate * 2
+                if player.angle - 0.1 >= 0:
+                    player.update(player.angle - 0.1, 'angle')
+                    path_dis_counter = frame_rate * 2
             # Raise launcher angle
             if keys[K_LEFT]:
                 if len(held_keys) == 0:
                     key_hold_counter = frame_rate / 2
                 if 'K_LEFT' not in held_keys:
                     held_keys.append('K_LEFT')
-                player.update(player.angle + 0.1, 'angle')
-                path_dis_counter = frame_rate * 2
+                if player.angle + 0.1 <= 90:
+                    player.update(player.angle + 0.1, 'angle')
+                    path_dis_counter = frame_rate * 2
             # Lower launcher power
             if keys[K_DOWN]:
                 if len(held_keys) == 0:
                     key_hold_counter = frame_rate / 2
                 if 'K_DOWN' not in held_keys:
                     held_keys.append('K_DOWN')
-                player.update(player.power - 0.1, 'power')
-                path_dis_counter = frame_rate * 2
+                if player.power - 0.1 >= 0:
+                    player.update(player.power - 0.1, 'power')
+                    path_dis_counter = frame_rate * 2
             # Raise launcher power
             if keys[K_UP]:
                 if len(held_keys) == 0:
@@ -494,14 +497,17 @@ while running:
     if len(held_keys) != 0 and key_hold_counter > 0:
         key_hold_counter -= 1
     if 'K_RIGHT' in held_keys and key_hold_counter == 0:
-        player.update(player.angle - 0.1, 'angle')
-        path_dis_counter = frame_rate * 2
+        if player.angle - 0.1 >= 0:
+            player.update(player.angle - 0.1, 'angle')
+            path_dis_counter = frame_rate * 2
     if 'K_LEFT' in held_keys and key_hold_counter == 0:
-        player.update(player.angle + 0.1, 'angle')
-        path_dis_counter = frame_rate * 2
+        if player.angle + 0.1 <= 90:
+            player.update(player.angle + 0.1, 'angle')
+            path_dis_counter = frame_rate * 2
     if 'K_DOWN' in held_keys and key_hold_counter == 0:
-        player.update(player.power - 0.05, 'power')
-        path_dis_counter = frame_rate * 2
+        if player.power - 0.05 >= 0:
+            player.update(player.power - 0.05, 'power')
+            path_dis_counter = frame_rate * 2
     if 'K_UP' in held_keys and key_hold_counter == 0:
         player.update(player.power + 0.05, 'power')
         path_dis_counter = frame_rate * 2
