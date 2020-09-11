@@ -20,6 +20,7 @@ def trunc_round(number, digits):
     return round_nearest_int(stepper * number) / stepper
 
 
+# Nothing is accurate
 pygame.init()
 # Initialize screen
 screen_width = 700
@@ -169,7 +170,7 @@ def dis_dot_path(path, dot_color, radius):
             pygame.draw.circle(screen, dot_color, (int(path[i][0]), int(path[i][1])), radius)
 
 
-def dis_line_path(path, line_color, line_type):
+def dis_line_path(path, line_color, line_type='solid'):
     if line_type == 'dash':
         width = 2
     else:
@@ -279,8 +280,8 @@ def mouse_click():
     mouse_distance = sqrt(
         mouse_pos1[0] * mouse_pos1[0] + (screen_height - mouse_pos1[1]) * (screen_height - mouse_pos1[1]))
     if mouse_left:
-        player.update((screen_height - mouse_pos1[1]) * 0.1, 'power')
         player.update(degrees(acos(mouse_pos1[0] / mouse_distance)), 'angle')
+        player.update(sqrt((mouse_distance * mouse_distance) * 0.01), 'power')
     elif mouse_right:
         if not target_lock:
             target.active = False
@@ -362,10 +363,10 @@ while running:
                 player.update(player.angle + 0.1, 'angle')
             # Lower launcher power
             if keys[K_DOWN]:
-                player.update(player.x_power - 0.1, 'power')
+                player.update(player.power - 1, 'power')
             # Raise launcher power
             elif keys[K_UP]:
-                player.update(player.x_power + 0.1, 'power')
+                player.update(player.power + 1, 'power')
             # Launch launcher
             if keys[K_l]:
                 player.launch_ball()
@@ -454,7 +455,7 @@ while running:
             ball.display_pos()
             ball.display_apex()
         if trace_type == 1:
-            dis_line_path(ball.path, ball.color, 'solid')
+            dis_line_path(ball.path, ball.color)
         elif trace_type == 2:
             dis_dot_path(ball.path, ball.color, 2)
     if kill_mode:
