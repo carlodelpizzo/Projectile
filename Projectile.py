@@ -83,7 +83,7 @@ class Ball:
         self.path = []
         self.dir = (0, 0)
         self.dir_hist = []
-        self.radius = 7
+        self.radius = 6
         self.color = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
         self.apex = False
         self.apex_y = screen_height * 2
@@ -106,13 +106,17 @@ class Ball:
                 self.apex_y = self.y + self.dir[1] + g_constant
         self.bounce_y()
         self.bounce_x()
-        self.dir = (self.dir[0], self.dir[1] + g_constant)
+        if self.y < screen_height:
+            self.dir = (self.dir[0], self.dir[1] + g_constant)
         self.x += self.dir[0]
         self.y += self.dir[1]
         self.t += 1
 
     def bounce_y(self):
-        if self.y > screen_height and self.dir[1] > 0:
+        if self.y >= screen_height and -0.05 < self.dir[1] < 0.05:
+            self.y = screen_height
+            self.dir = (self.dir[0], 0)
+        elif self.y > screen_height and self.dir[1] > 0:
             self.dir = (self.dir[0] * friction, -(self.dir[1] * friction))
         elif self.y < 0 and ceiling and self.dir[1] < 0:
             self.dir = (self.dir[0] * friction, -(self.dir[1] * friction))
@@ -306,7 +310,7 @@ target = Target(0, 0)
 clock = pygame.time.Clock()
 frame_rate = 60
 g_constant = 9.8 / frame_rate
-friction = 0.98
+friction = 0.95
 
 walls = False
 ceiling = False
@@ -515,7 +519,8 @@ while running:
     # Ball updates
     for ball in balls:
         if not pause:
-            ball.move()
+            if 0 - (ball.radius * 2) < ball.x < screen_width + (ball.radius * 2):
+                ball.move()
         ball.draw()
         if show_info:
             ball.display_pos()
