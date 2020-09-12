@@ -272,7 +272,7 @@ def mouse_click():
         cos_ = cos(radians(player.angle))
         cos2 = cos_ * cos_
         tan_ = tan(radians(player.angle))
-        r = sqrt(abs((g_constant * target.x * target.x) / (2 * cos2 * (target.y_alt - (tan_ * target.x))))) + 0.069
+        r = sqrt(abs((g_constant * target.x * target.x) / (2 * cos2 * (target.y_alt - (tan_ * target.x))))) - 0.069
         player.update(r, 'power')
 
     mouse_pos1 = pygame.mouse.get_pos()
